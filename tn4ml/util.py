@@ -185,8 +185,8 @@ def pad_image_alternately(image: np.ndarray, k: int) -> np.ndarray:
     ----------
     image: :class:`numpy.ndarray`
         A 2D array of pixel intensities.
-    k: int
-        The patch size.
+    k: int or tuple[int, int]
+        The patch size (integer for square patches or a tuple).
 
     Returns
     -------
@@ -195,12 +195,21 @@ def pad_image_alternately(image: np.ndarray, k: int) -> np.ndarray:
     """
     H, W = image.shape
     
-    # Determine padding required
-    pad = (k - H % k) % k
-    
-    # Alternate padding by adding to left or right as necessary
-    top_pad, bottom_pad = (pad//2, pad//2) if pad % 2 == 0 else (pad//2 + 1, pad//2)
-    left_pad, right_pad = (pad//2, pad//2) if pad % 2 == 0 else (pad//2 + 1, pad//2)
+    if isinstance(k, int):
+        # Determine padding required
+        pad = (k - H % k) % k
+        # Alternate padding by adding to left or right as necessary
+        top_pad, bottom_pad = (pad//2, pad//2) if pad % 2 == 0 else (pad//2 + 1, pad//2)
+        left_pad, right_pad = (pad//2, pad//2) if pad % 2 == 0 else (pad//2 + 1, pad//2)
+
+    elif isinstance(k, tuple) and len(k) == 2:
+        kH, kW = k
+        # Determine padding required for both height and width
+        pad_H = (kH - H % kH) % kH
+        pad_W = (kW - W % kW) % kW
+        # Alternate padding by adding to left or right as necessary   
+        top_pad, bottom_pad = (pad_H // 2, pad_H // 2) if pad_H % 2 == 0 else (pad_H // 2 + 1, pad_H // 2)
+        left_pad, right_pad = (pad_W // 2, pad_W // 2) if pad_W % 2 == 0 else (pad_W // 2 + 1, pad_W // 2)
     
     # Apply padding in a single operation
     padded_image = jnp.pad(
@@ -214,27 +223,36 @@ def pad_image_alternately(image: np.ndarray, k: int) -> np.ndarray:
 
 def divide_into_patches(image: np.ndarray, k: int) -> np.ndarray:
     """
-    Divide the image into patches of size kxk.
+    Divide the image into patches of size kxk (or kH x kW).
 
     Parameters
     ----------
     image: :class:`numpy.ndarray
         A 2D array of pixel intensities.
-    k: int
-        The patch size.
+    k: int or tuple[int, int]
+        The patch size (integer for square patches or a tuple).
 
     Returns
     -------
     :class:`numpy.ndarray`
-        A list of 2D arrays, each of size kxk.
-    """        
-    # Pad the image to ensure it's divisible by k
-    padded_image = pad_image_alternately(image, k) if image.shape[0] % k != 0 else image
-
+        A list of 2D arrays, each of size kxk (or kH x kW).
+    """
+    # Handle k as either int or tuple
+    if isinstance(k, int):
+        kH, kW = k, k
+        # Pad the image to ensure it's divisible by k
+        padded_image = pad_image_alternately(image, k) if image.shape[0] % k != 0 else image
+    elif isinstance(k, tuple) and len(k) == 2:
+        kH, kW = k
+        # Pad the image
+        padded_image = pad_image_alternately(image, (kH, kW))
+    else:
+        raise ValueError(f"k must be an int or a tuple of two integers")
+    
     H, W = padded_image.shape    
 
     # Reshape and move axes to create kxk patches
-    patches = padded_image.reshape(H // k, k, W // k, k).swapaxes(1, 2).reshape(-1, k, k)
+    patches = padded_image.reshape(H // kH, kH, W // kW, kW).swapaxes(1, 2).reshape(-1, kH, kW)
     
     return jnp.array(patches)
 

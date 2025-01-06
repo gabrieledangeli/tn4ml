@@ -458,7 +458,12 @@ def CombinedOptaxLoss(model: Model,
                       embedding: Optional[Embedding] = None) -> Number:
     return jnp.mean(error(model, data, y_true) + reg(model))
 
-def CombinedLoss(model: Model, data: np.ndarray = None, error: Callable = LogQuadNorm, reg: Callable = NoReg, embedding: Optional[Embedding] = None) -> Number:
+def CombinedLoss(model: Model, 
+                 data: np.ndarray = None,
+                 y_true: Optional[jnp.array] = None, 
+                 error: Callable = LogQuadNorm, 
+                 reg: Callable = NoReg, 
+                 embedding: Optional[Embedding] = None) -> Number:
     """Example of Loss function with calculation of error on input data and regularization.
 
     Parameters
@@ -481,4 +486,7 @@ def CombinedLoss(model: Model, data: np.ndarray = None, error: Callable = LogQua
     if not data:
         raise ValueError('Provide input data!')
     
-    return np.mean([error(model, embed(sample, embedding)) for sample in data] if embedding else error(model, data)) + reg(model)
+    if y_true:
+        return jnp.mean(error(model, data, y_true) + reg(model))
+    else:
+        return np.mean([error(model, embed(sample, embedding)) for sample in data] if embedding else error(model, data)) + reg(model)
