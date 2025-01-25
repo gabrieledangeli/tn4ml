@@ -690,11 +690,12 @@ class Model(qtn.TensorNetwork):
                                 current = loss_val_epoch
                                 return_value = earlystop.on_end_epoch(current, epoch)
                     else:
-                        if earlystop.monitor == 'loss':
-                                current = loss_epoch
-                        else:
-                            current = sum(self.history[earlystop.monitor][-num_batches:])/num_batches
-                        return_value = earlystop.on_end_epoch(current, epoch)
+                        if earlystop:
+                            if earlystop.monitor == 'loss':
+                                    current = loss_epoch
+                            else:
+                                current = sum(self.history[earlystop.monitor][-num_batches:])/num_batches
+                            return_value = earlystop.on_end_epoch(current, epoch)
 
                 outerbar.update()
                 if val_inputs is not None:
@@ -708,6 +709,10 @@ class Model(qtn.TensorNetwork):
                 if earlystop:
                     if return_value == 1:
                         return self.history
+                
+                indices = np.random.permutation(inputs.shape[0])
+                inputs = inputs[indices]
+                targets = targets[indices]
 
         return self.history
 

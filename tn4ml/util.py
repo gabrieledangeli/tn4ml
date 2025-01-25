@@ -358,7 +358,7 @@ class EarlyStopping:
             raise ValueError(f'EarlyStopping mode can be either "min" or "max".')
 
         self.memory = dict()
-        self.memory['best'] = np.Inf if self.mode == 'min' else -np.Inf
+        self.memory['best'] = np.inf if self.mode == 'min' else -np.inf
         self.memory['best_epoch'] = 0 # track on each epoch
         if self.mode == 'min':
             self.min_delta = self.min_delta*(-1)
