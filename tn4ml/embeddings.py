@@ -327,9 +327,13 @@ class polynomial(Embedding):
     def dim(self) -> int:
         """ Mapping dimension """
         if self.include_bias:
-            return sum(math.comb(self.input_dim + k - 1, k) for k in range(0, self.degree + 1))
+            return self.degree + 1
         else:
-            return sum(math.comb(self.input_dim + k - 1, k) for k in range(1, self.degree + 1))
+            return self.degree
+        # if self.include_bias:
+        #     return sum(math.comb(self.input_dim + k - 1, k) for k in range(0, self.degree + 1))
+        # else:
+        #     return sum(math.comb(self.input_dim + k - 1, k) for k in range(1, self.degree + 1))
 
     @property
     def input_dim(self) -> int:
@@ -351,17 +355,20 @@ class polynomial(Embedding):
         """
         
         if self.include_bias:
-            features = [1.0]
+            features = [1.0] + [x**d for d in range(1, self.degree + 1)]
         else:
-            features = []
+            features = [x**d for d in range(1, self.degree + 1)]
         # Generate combinations of feature indices with repetition up to the specified degree
-        for d in range(1, self.degree + 1):
-            if d == 0:
-                features.append(x)
-            for combination in itertools.combinations_with_replacement(range(len(x)), d):
-                # Compute the product of the selected features
-                product = jnp.prod(x[jnp.array(combination)])
-                features.append(product)
+        # for d in range(1, self.degree + 1):
+        #     # if d == 0:
+        #     #     features.append(x)
+        #     # for combination in itertools.combinations_with_replacement(x, d):
+        #     #     print(combination)
+
+        #     # for combination in itertools.combinations_with_replacement(range(len(x)), d):
+        #     #     # Compute the product of the selected features
+        #     #     product = jnp.prod(x[jnp.array(combination)])
+        #     #     features.append(product)
         return jnp.array(features)
  
 class jax_arrays(Embedding):
